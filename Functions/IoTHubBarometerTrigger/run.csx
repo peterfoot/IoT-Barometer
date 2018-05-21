@@ -12,8 +12,8 @@ public class WeatherReport
     public float Temperature{get;set;}
     [JsonProperty("pressure")]
     public float Pressure{get;set;}
-    [JsonProperty("setPressure")]
-    public float SetPressure{get;set;}
+    [JsonProperty("markedPressure")]
+    public float MarkedPressure{get;set;}
     [JsonProperty("humidity")]
     public float Humidity{get;set;}
     [JsonProperty("wind")]
@@ -29,7 +29,7 @@ public static void Run(string myEventHubMessage, TraceWriter log)
 
     string message = "Fair";
 
-    if(wr.Pressure < (wr.SetPressure - 5))
+    if(wr.Pressure < (wr.MarkedPressure - 5))
     {
         if(wr.Pressure < 980)
         {

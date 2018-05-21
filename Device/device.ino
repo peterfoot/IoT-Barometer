@@ -15,7 +15,7 @@ HTS221Sensor *htSensor;
 DevI2C *ext_i2c;
 int mag_axes[3];
 
-float setPressure = 1000; // pressure in mbar to use as baseline for tracking movements
+float markedPressure = 1000; // pressure in mbar to use as baseline for tracking movements
 
 // called when cloud-to-device message is received
 void MessageReceived(const char* message, int length)
@@ -151,7 +151,7 @@ void loop() {
     char buff[128];
 
    // build packet to send to Azure IoT Hub
-    snprintf(buff, 128, "{\"barometerEvent\":\"log\",\"temp\": %.1f,\"pressure\": %.2f,\"setPressure\": %.2f,\"humidity\": %.2f,\"wind\": \"%c\"}", temp, pressure, setPressure, humidity, compassPoint);
+    snprintf(buff, 128, "{\"barometerEvent\":\"log\",\"temp\": %.1f,\"pressure\": %.2f,\"markedPressure\": %.2f,\"humidity\": %.2f,\"wind\": \"%c\"}", temp, pressure, markedPressure, humidity, compassPoint);
      
     if (DevKitMQTTClient_SendEvent(buff))
     {
