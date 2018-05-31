@@ -1,9 +1,11 @@
+#r "Microsoft.ServiceBus"
 #r "Newtonsoft.Json"
 
 using System;
 using System.Configuration;
 using System.Text;
 using Microsoft.Azure.Devices;
+using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 
 public class WeatherReport
@@ -20,45 +22,54 @@ public class WeatherReport
     public string WindDirection {get;set;}
 }
 
-public static void Run(string myEventHubMessage, TraceWriter log)
+public static void Run(EventData myEventHubMessage, TraceWriter log)
 {
-    string json = myEventHubMessage;
-    log.Info(json);
+    object id = null;
+    
+    try{
+        id = myEventHubMessage.SystemProperties["iothub-connection-device-id"];
+    }
+    catch{}
+
+    string deviceId = id == null ? string.Empty : id.ToString();
+    //log.Info(deviceId);
+    
+    string json = System.Text.Encoding.UTF8.GetString(myEventHubMessage.GetBytes());
+    //log.Info(json);
     WeatherReport wr = JsonConvert.DeserializeObject<WeatherReport>(json);
-    log.Info($"C# Event Hub trigger function processed a message: {myEventHubMessage}");
 
     string message = "Fair";
 
     if(wr.Pressure < (wr.MarkedPressure - 5))
     {
-        if(wr.Pressure < 980)
+        if(wr.Pressure < 1000)
         {
             message = "Storm warning";
         }
-        else if(wr.Pressure < 1000)
+        else if(wr.Pressure < 1010)
         {
             message = "Rain warning";
         }
-        else if(wr.Pressure < 1020)
+        else if(wr.Pressure < 1015)
         {
             message = "Change warning";
         }
     }
     else
     {
-        if(wr.Pressure < 965)
+        if(wr.Pressure < 990)
         {
             message = "Stormy";
         }
-        else if(wr.Pressure < 982)
+        else if(wr.Pressure < 1005)
         {
             message = "Rain";
         }
-        else if(wr.Pressure < 1016)
+        else if(wr.Pressure < 1010)
         {
             message = "Change";
         }
-        else if(wr.Pressure < 1032)
+        else if(wr.Pressure < 1015)
         {
             message = "Fair";
         }
@@ -69,9 +80,9 @@ public static void Run(string myEventHubMessage, TraceWriter log)
     }
         
     // Send back to device
-        
-    string jsonMessage = $"{{\"alert\": \"{message}\"}}";
-    string deviceId = "AZ3166";
+    if(!string.IsNullOrEmpty(deviceId))    
+    {
+        string jsonMessage = $"{{\"alert\": \"{message}\"}}";
         try
         {
             string connectionString = ConfigurationManager.AppSettings["iotHubConnectionString"];
@@ -84,5 +95,6 @@ public static void Run(string myEventHubMessage, TraceWriter log)
         catch(Exception ex)
         {
             throw new Exception($"Failed to send C2D message: {ex.Message}");
+        }
     }     
 }

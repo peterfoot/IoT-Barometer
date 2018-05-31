@@ -36,7 +36,7 @@ void MessageReceived(const char* message, int length)
 void buttonPress()
 {
   // store current pressure (set barometer needle to track movement)
-  barometer->getPressure(&setPressure);
+  barometer->getPressure(&markedPressure);
 }
 
 // returns an angle in degrees given x and y readings from the magnetometer.
