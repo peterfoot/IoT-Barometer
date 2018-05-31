@@ -16,6 +16,7 @@ DevI2C *ext_i2c;
 int mag_axes[3];
 
 float markedPressure = 1000; // pressure in mbar to use as baseline for tracking movements
+bool useSimulatedValues = false;
 
 // called when cloud-to-device message is received
 void MessageReceived(const char* message, int length)
@@ -37,6 +38,12 @@ void buttonPress()
 {
   // store current pressure (set barometer needle to track movement)
   barometer->getPressure(&markedPressure);
+}
+
+// called when Button B is pressed and released
+void simulateButtonPress()
+{
+  useSimulatedValues = !useSimulatedValues;
 }
 
 // returns an angle in degrees given x and y readings from the magnetometer.
@@ -89,6 +96,9 @@ void setup() {
   pinMode(USER_BUTTON_A, INPUT);
   attachInterrupt(USER_BUTTON_A, buttonPress, FALLING);
 
+  pinMode(USER_BUTTON_B, INPUT);
+  attachInterrupt(USER_BUTTON_B, simulateButtonPress, FALLING);
+
   ext_i2c = new DevI2C(D14, D15);
   magnetometer = new LIS2MDLSensor(*ext_i2c);
   magnetometer->init(NULL);
@@ -109,6 +119,8 @@ void setup() {
       hasIoTHub = false;
       return;
     }
+
+    DevKitMQTTClient_SetMessageCallback(MessageReceived);
     hasIoTHub = true;
   }
   else
@@ -133,6 +145,11 @@ void loop() {
   barometer->getPressure(&pressure);
   barometer->getTemperature(&temp);
   htSensor->getHumidity(&humidity);
+
+  if(useSimulatedValues)
+  {
+    pressure = 980.0;
+  }
 
   // angle is now roughly angle from magnetic north (assuming DevKit is flat on a table)
   double angle = angleForVector(magX, magY);
@@ -164,5 +181,9 @@ void loop() {
   }
 
   // repeat every minute
-  delay(60000);
+  for(int i = 0; i < 4; i++)
+  {
+    delay(15000);
+    DevKitMQTTClient_Check(false);
+  }
 }
