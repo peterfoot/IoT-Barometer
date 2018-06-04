@@ -44,6 +44,13 @@ void buttonPress()
 void simulateButtonPress()
 {
   useSimulatedValues = !useSimulatedValues;
+  if(useSimulatedValues)
+  {
+    digitalWrite(LED_USER, 1);
+  }
+  else{
+    digitalWrite(LED_USER,0);
+  }
 }
 
 // returns an angle in degrees given x and y readings from the magnetometer.
@@ -133,17 +140,23 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
+  float temp;
+  float pressure;
+  float humidity;
+  char compassPoint;
+
+  for(int i = 0; i < 4; i++)
+  {
+
   magnetometer->getMAxes(mag_axes);
   double magX, magY;
   // store the magnetometer results reversed because we want heading in relation to screen orientation
   magX = (double)-mag_axes[0];
   magY = (double)-mag_axes[1];
 
-  float temp;
-  float pressure;
-  float humidity;
+  
   barometer->getPressure(&pressure);
-  barometer->getTemperature(&temp);
+  htSensor->getTemperature(&temp);
   htSensor->getHumidity(&humidity);
 
   if(useSimulatedValues)
@@ -155,14 +168,21 @@ void loop() {
   double angle = angleForVector(magX, magY);
 
   // compass point character for display
-  char compassPoint = compassPointFromAngle(angle);
+  compassPoint = compassPointFromAngle(angle);
 
   // build screen text
   char buff[128];
   snprintf(buff, 128, "%.1fC %.0fmb\r\n%.1f %% Wind: %c", temp, pressure, humidity, compassPoint);
 
-  Screen.print(1, buff);
+    Screen.print(1, buff);
 
+  
+    delay(15000);
+    // check every 15 seconds
+    DevKitMQTTClient_Check(false);
+  }
+  
+  // only send once per minute  
   if (hasIoTHub && hasWifi)
   {
     char buff[128];
@@ -178,12 +198,5 @@ void loop() {
     {
       Screen.print(3, "Failure...");
     }
-  }
-
-  // repeat every minute
-  for(int i = 0; i < 4; i++)
-  {
-    delay(15000);
-    DevKitMQTTClient_Check(false);
   }
 }
